@@ -4,16 +4,17 @@ use std::process::ExitCode;
 use clap::{Parser, Subcommand};
 use kleio::{
     DEFAULT_WORLD_SLUG, LocalAssertionOptions, LocalBirthEventOptions, LocalEntityKind,
-    LocalEntityOptions, LocalEventOptions, LocalImportKind, LocalImportReportOptions,
-    LocalPersonOptions, LocalSchemaKind, LocalSchemaOptions, LocalSkeletonOptions,
-    LocalSourceOptions, LocalViewKind, LocalViewOptions, LocalWorldBuildOptions,
-    PrimaryGedcomImportOptions, WorkspaceConfig, WorkspacePaths, build_local_world_with_options,
-    create_local_assertion, create_local_birth_event, create_local_entity, create_local_event,
-    create_local_import_report, create_local_person, create_local_schema, create_local_source,
-    create_local_view, create_workspace_skeleton, create_world_layout, create_world_skeleton,
-    list_local_views, read_workspace_config, resolve_workspace_world_root,
-    resolve_world_build_paths, set_primary_gedcom_import, validate_local_world,
-    write_local_data_json, write_local_ecs_json, write_local_timeline_json,
+    LocalEntityOptions, LocalEventOptions, LocalGedcomIngestOptions, LocalImportKind,
+    LocalImportReportOptions, LocalPersonOptions, LocalRelationshipOptions, LocalSchemaKind,
+    LocalSchemaOptions, LocalSkeletonOptions, LocalSourceOptions, LocalViewKind, LocalViewOptions,
+    LocalWorldBuildOptions, PrimaryGedcomImportOptions, WorkspaceConfig, WorkspacePaths,
+    build_local_world_with_options, create_local_assertion, create_local_birth_event,
+    create_local_entity, create_local_event, create_local_import_report, create_local_person,
+    create_local_relationship, create_local_schema, create_local_source, create_local_view,
+    create_workspace_skeleton, create_world_layout, create_world_skeleton,
+    ingest_primary_gedcom_to_world, list_local_views, read_workspace_config,
+    resolve_workspace_world_root, resolve_world_build_paths, set_primary_gedcom_import,
+    validate_local_world, write_local_data_json, write_local_ecs_json, write_local_timeline_json,
     write_local_tree_json_with_view, write_workspace_config,
 };
 
@@ -289,6 +290,43 @@ enum Command {
         /// Event title.
         #[arg(long)]
         title: String,
+
+        /// Overwrite existing generated files if present.
+        #[arg(long)]
+        force: bool,
+    },
+
+    /// Create a relationship between two person entities.
+    NewRelationship {
+        relationship_slug: String,
+
+        /// Workspace root. Defaults to $KLEIO_DATA_DIR, $XDG_DATA_HOME/kleio, or ~/.local/share/kleio.
+        #[arg(long)]
+        root: Option<PathBuf>,
+
+        /// World slug. Defaults to the workspace default world.
+        #[arg(long)]
+        world: Option<String>,
+
+        /// Relationship display title.
+        #[arg(long)]
+        title: String,
+
+        /// Relationship kind, such as biological-parent-child, spouse, sibling, or associate.
+        #[arg(long, default_value = "associate")]
+        kind: String,
+
+        /// Source person id, such as person:example-parent.
+        #[arg(long)]
+        source: String,
+
+        /// Target person id, such as person:example-child.
+        #[arg(long)]
+        target: String,
+
+        /// Optional source record ids supporting this relationship. May be repeated.
+        #[arg(long = "source-record")]
+        source_records: Vec<String>,
 
         /// Overwrite existing generated files if present.
         #[arg(long)]
@@ -580,6 +618,24 @@ enum Command {
         /// Update world.toml even if the GEDCOM file does not exist yet.
         #[arg(long)]
         allow_missing: bool,
+    },
+
+    /// Ingest a GEDCOM file into first-pass world records.
+    IngestGedcom {
+        /// GEDCOM path under the world root, e.g. imports/gedcom/family.ged.
+        path: String,
+
+        /// Workspace root. Defaults to $KLEIO_DATA_DIR, $XDG_DATA_HOME/kleio, or ~/.local/share/kleio.
+        #[arg(long)]
+        root: Option<PathBuf>,
+
+        /// World slug. Defaults to the workspace default world.
+        #[arg(long)]
+        world: Option<String>,
+
+        /// Overwrite generated people/events/places/relationships/source files if present.
+        #[arg(long)]
+        force: bool,
     },
 
     /// Validate world files without writing build outputs.
@@ -1056,6 +1112,32 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
             )?;
             println!("created event record at {}", path.display());
         }
+        Command::NewRelationship {
+            root,
+            world,
+            relationship_slug,
+            title,
+            kind,
+            source,
+            target,
+            source_records,
+            force,
+        } => {
+            let world_root = resolve_world_root(root, world.as_deref())?;
+            let path = create_local_relationship(
+                &world_root,
+                &LocalRelationshipOptions {
+                    relationship_slug,
+                    title,
+                    relationship_kind: kind,
+                    source,
+                    target,
+                    sources: source_records,
+                    force,
+                },
+            )?;
+            println!("created relationship record at {}", path.display());
+        }
         Command::NewSource {
             root,
             world,
@@ -1270,6 +1352,29 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
             println!(
                 "updated primary GEDCOM import in {}/world.toml",
                 world_root.display()
+            );
+        }
+        Command::IngestGedcom {
+            root,
+            world,
+            path,
+            force,
+        } => {
+            let world_root = resolve_world_root(root, world.as_deref())?;
+            let report = ingest_primary_gedcom_to_world(
+                &world_root,
+                &LocalGedcomIngestOptions { path, force },
+            )?;
+            println!(
+                "ingested GEDCOM into {}: {} people, {} places, {} events, {} relationships, {} assertions, {} sources ({} existing records skipped)",
+                world_root.display(),
+                report.people,
+                report.places,
+                report.events,
+                report.relationships,
+                report.assertions,
+                report.sources,
+                report.skipped_existing
             );
         }
         Command::Validate { root, world } => {

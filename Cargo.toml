@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
-kleio = { path = "../kleio" }
+kleio = { path = "../kleio", features = ["ged-io"] }
 
 [[bin]]
 name = "kleio-cli"
