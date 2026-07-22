@@ -3,19 +3,23 @@ use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
 use kleio::{
-    DEFAULT_WORLD_SLUG, LocalAssertionOptions, LocalBirthEventOptions, LocalEntityKind,
-    LocalEntityOptions, LocalEventOptions, LocalGedcomIngestOptions, LocalImportKind,
-    LocalImportReportOptions, LocalPersonOptions, LocalRelationshipOptions, LocalSchemaKind,
-    LocalSchemaOptions, LocalSkeletonOptions, LocalSourceOptions, LocalViewKind, LocalViewOptions,
-    LocalWorldBuildOptions, PrimaryGedcomImportOptions, WorkspaceConfig, WorkspacePaths,
-    build_local_world_with_options, create_local_assertion, create_local_birth_event,
-    create_local_entity, create_local_event, create_local_import_report, create_local_person,
-    create_local_relationship, create_local_schema, create_local_source, create_local_view,
-    create_workspace_skeleton, create_world_layout, create_world_skeleton,
-    ingest_primary_gedcom_to_world, list_local_views, read_workspace_config,
-    resolve_workspace_world_root, resolve_world_build_paths, set_primary_gedcom_import,
-    validate_local_world, write_local_data_json, write_local_ecs_json, write_local_timeline_json,
+    DEFAULT_WORLD_SLUG, LocalAssertionOptions, LocalBirthEventOptions, LocalCollectionKind,
+    LocalCollectionOptions, LocalCollectionOrder, LocalEntityKind, LocalEntityOptions,
+    LocalEventOptions, LocalImportKind, LocalImportReportOptions, LocalPersonOptions,
+    LocalRelationshipOptions, LocalSchemaKind, LocalSchemaOptions, LocalSkeletonOptions,
+    LocalSourceOptions, LocalViewKind, LocalViewOptions, LocalWorldBuildOptions, WorkspaceConfig,
+    WorkspacePaths, build_local_world_with_options, create_local_assertion,
+    create_local_birth_event, create_local_collection, create_local_entity, create_local_event,
+    create_local_import_report, create_local_person, create_local_relationship,
+    create_local_schema, create_local_source, create_local_view, create_workspace_skeleton,
+    create_world_layout, create_world_skeleton, list_local_views, read_workspace_config,
+    resolve_workspace_world_root, resolve_world_build_paths, validate_local_world,
+    write_local_data_json, write_local_ecs_json, write_local_timeline_json,
     write_local_tree_json_with_view, write_workspace_config,
+};
+use kleio_gedcom::{
+    LocalGedcomIngestOptions, PrimaryGedcomImportOptions, ingest_primary_gedcom_to_world,
+    set_primary_gedcom_import,
 };
 
 #[derive(Debug)]
@@ -296,6 +300,39 @@ enum Command {
         force: bool,
     },
 
+    /// Create an event collection or sequence.
+    NewCollection {
+        collection_slug: String,
+
+        /// Workspace root. Defaults to $KLEIO_DATA_DIR, $XDG_DATA_HOME/kleio, or ~/.local/share/kleio.
+        #[arg(long)]
+        root: Option<PathBuf>,
+
+        /// World slug. Defaults to the workspace default world.
+        #[arg(long)]
+        world: Option<String>,
+
+        /// Collection title.
+        #[arg(long)]
+        title: String,
+
+        /// Treat the collection as an ordered sequence.
+        #[arg(long)]
+        sequence: bool,
+
+        /// Sequence order strategy.
+        #[arg(long, value_enum, default_value_t = CollectionOrderArg::ManualThenChronological)]
+        order: CollectionOrderArg,
+
+        /// Event ids to include as initial members. May be repeated.
+        #[arg(long = "member")]
+        members: Vec<String>,
+
+        /// Overwrite existing generated files if present.
+        #[arg(long)]
+        force: bool,
+    },
+
     /// Create a relationship between two person entities.
     NewRelationship {
         relationship_slug: String,
@@ -374,17 +411,13 @@ enum Command {
         #[arg(long, default_value = "claim")]
         kind: String,
 
-        /// Subject id, such as person:example-person.
+        /// Assertion target id, such as event:birth-jon#time or person:jon#name.
         #[arg(long)]
-        subject: String,
+        target: String,
 
-        /// Predicate, such as born_on or has_name.
+        /// Claimed value. Optional for support assertions that target a specific event field.
         #[arg(long)]
-        predicate: String,
-
-        /// Claimed value.
-        #[arg(long)]
-        value: String,
+        value: Option<String>,
 
         /// Overwrite existing generated files if present.
         #[arg(long)]
@@ -729,6 +762,23 @@ enum Command {
         #[arg(long)]
         out: Option<PathBuf>,
     },
+}
+
+#[derive(Debug, Clone, Copy, clap::ValueEnum)]
+enum CollectionOrderArg {
+    Chronological,
+    Manual,
+    ManualThenChronological,
+}
+
+impl From<CollectionOrderArg> for LocalCollectionOrder {
+    fn from(value: CollectionOrderArg) -> Self {
+        match value {
+            CollectionOrderArg::Chronological => Self::Chronological,
+            CollectionOrderArg::Manual => Self::Manual,
+            CollectionOrderArg::ManualThenChronological => Self::ManualThenChronological,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, clap::ValueEnum)]
@@ -1112,6 +1162,35 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
             )?;
             println!("created event record at {}", path.display());
         }
+        Command::NewCollection {
+            root,
+            world,
+            collection_slug,
+            title,
+            sequence,
+            order,
+            members,
+            force,
+        } => {
+            let world_root = resolve_world_root(root, world.as_deref())?;
+            let kind = if sequence {
+                LocalCollectionKind::Sequence
+            } else {
+                LocalCollectionKind::Set
+            };
+            let path = create_local_collection(
+                &world_root,
+                &LocalCollectionOptions {
+                    collection_slug,
+                    title,
+                    kind,
+                    order: order.into(),
+                    members,
+                    force,
+                },
+            )?;
+            println!("created event collection at {}", path.display());
+        }
         Command::NewRelationship {
             root,
             world,
@@ -1163,8 +1242,7 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
             world,
             assertion_slug,
             kind,
-            subject,
-            predicate,
+            target,
             value,
             force,
         } => {
@@ -1174,8 +1252,7 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                 &LocalAssertionOptions {
                     assertion_slug,
                     assertion_kind: kind,
-                    subject,
-                    predicate,
+                    target,
                     value,
                     force,
                 },
@@ -1431,10 +1508,13 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                 output.toml_documents,
                 output.ecs_entities
             );
-            if let (Some(path), Some(events)) = (&output.timeline_json_path, output.timeline_events)
-            {
+            if let (Some(path), Some(events), Some(collections)) = (
+                &output.timeline_json_path,
+                output.timeline_events,
+                output.timeline_collections,
+            ) {
                 println!(
-                    "wrote timeline projection with {events} events to {}",
+                    "wrote timeline projection with {events} events and {collections} collections to {}",
                     path.display()
                 );
             }
@@ -1466,8 +1546,9 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
             let out = out.unwrap_or_else(|| build_dir.join(format!("{output_slug}.timeline.json")));
             let timeline = write_local_timeline_json(&world_root, view.as_deref(), &out)?;
             println!(
-                "wrote timeline projection with {} events to {}",
+                "wrote timeline projection with {} events and {} collections to {}",
                 timeline.events.len(),
+                timeline.collections.len(),
                 out.display()
             );
         }
