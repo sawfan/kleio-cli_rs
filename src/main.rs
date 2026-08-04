@@ -72,6 +72,18 @@ enum Command {
         #[arg(long)]
         birth_date: Option<String>,
 
+        /// Optional starter birth location for the starter birth event.
+        #[arg(long)]
+        birth_location: Option<String>,
+
+        /// Optional starter birth latitude.
+        #[arg(long)]
+        birth_latitude: Option<f64>,
+
+        /// Optional starter birth longitude.
+        #[arg(long)]
+        birth_longitude: Option<f64>,
+
         /// Overwrite existing starter files if present.
         #[arg(long)]
         force: bool,
@@ -101,6 +113,18 @@ enum Command {
         /// Optional starter birth date, such as 1900-01-01.
         #[arg(long)]
         birth_date: Option<String>,
+
+        /// Optional starter birth location for the starter birth event.
+        #[arg(long)]
+        birth_location: Option<String>,
+
+        /// Optional starter birth latitude.
+        #[arg(long)]
+        birth_latitude: Option<f64>,
+
+        /// Optional starter birth longitude.
+        #[arg(long)]
+        birth_longitude: Option<f64>,
 
         /// Overwrite existing starter files if present.
         #[arg(long)]
@@ -139,6 +163,18 @@ enum Command {
         /// Optional starter birth date used when --starter is set.
         #[arg(long)]
         birth_date: Option<String>,
+
+        /// Optional starter birth location used when --starter is set.
+        #[arg(long)]
+        birth_location: Option<String>,
+
+        /// Optional starter birth latitude used when --starter is set.
+        #[arg(long)]
+        birth_latitude: Option<f64>,
+
+        /// Optional starter birth longitude used when --starter is set.
+        #[arg(long)]
+        birth_longitude: Option<f64>,
 
         /// Overwrite existing starter files if present.
         #[arg(long)]
@@ -181,6 +217,18 @@ enum Command {
         /// Optional birth date for the starter birth event.
         #[arg(long)]
         birth_date: Option<String>,
+
+        /// Optional birth location for the starter birth event.
+        #[arg(long)]
+        birth_location: Option<String>,
+
+        /// Optional birth latitude for the starter birth event.
+        #[arg(long)]
+        birth_latitude: Option<f64>,
+
+        /// Optional birth longitude for the starter birth event.
+        #[arg(long)]
+        birth_longitude: Option<f64>,
 
         /// Skip creating the starter birth event.
         #[arg(long)]
@@ -287,13 +335,45 @@ enum Command {
         #[arg(long)]
         world: Option<String>,
 
-        /// Event kind, such as birth, residence, observation, or moment.
-        #[arg(long, default_value = "observation")]
-        kind: String,
+        /// Event type, such as birth, residence, observation, or moment.
+        #[arg(long = "type", default_value = "observation")]
+        event_type: String,
 
-        /// Event title.
+        /// Optional event title. When omitted, common event types derive labels from participants.
         #[arg(long)]
-        title: String,
+        title: Option<String>,
+
+        /// Event participant entity ids. May be repeated.
+        #[arg(long = "participant")]
+        participants: Vec<String>,
+
+        /// Event place entity ids. May be repeated.
+        #[arg(long = "place")]
+        places: Vec<String>,
+
+        /// Inline event location label.
+        #[arg(long)]
+        location: Option<String>,
+
+        /// Inline event location latitude.
+        #[arg(long)]
+        latitude: Option<f64>,
+
+        /// Inline event location longitude.
+        #[arg(long)]
+        longitude: Option<f64>,
+
+        /// Event time/date text.
+        #[arg(long)]
+        time: Option<String>,
+
+        /// Event date precision. Inferred from --time when omitted.
+        #[arg(long)]
+        date_precision: Option<String>,
+
+        /// Event source ids. May be repeated.
+        #[arg(long = "source")]
+        sources: Vec<String>,
 
         /// Overwrite existing generated files if present.
         #[arg(long)]
@@ -419,6 +499,10 @@ enum Command {
         #[arg(long)]
         value: Option<String>,
 
+        /// Assertion source ids. May be repeated.
+        #[arg(long = "source")]
+        sources: Vec<String>,
+
         /// Overwrite existing generated files if present.
         #[arg(long)]
         force: bool,
@@ -444,6 +528,18 @@ enum Command {
         /// Optional birth date, such as 1900-01-01.
         #[arg(long)]
         birth_date: Option<String>,
+
+        /// Optional birth location, stored inline on the birth event.
+        #[arg(long)]
+        birth_location: Option<String>,
+
+        /// Optional birth latitude, stored inline on the birth event.
+        #[arg(long)]
+        birth_latitude: Option<f64>,
+
+        /// Optional birth longitude, stored inline on the birth event.
+        #[arg(long)]
+        birth_longitude: Option<f64>,
 
         /// Overwrite existing generated file if present.
         #[arg(long)]
@@ -935,6 +1031,9 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
             person_slug,
             person_name,
             birth_date,
+            birth_location,
+            birth_latitude,
+            birth_longitude,
             force,
         } => {
             let root = resolve_data_root(root);
@@ -944,6 +1043,9 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                 person_slug,
                 person_name,
                 birth_date,
+                birth_location,
+                birth_latitude,
+                birth_longitude,
                 force,
             };
             create_workspace_skeleton(&root, &options)?;
@@ -965,6 +1067,9 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
             person_slug,
             person_name,
             birth_date,
+            birth_location,
+            birth_latitude,
+            birth_longitude,
             force,
         } => {
             let root = resolve_data_root(root);
@@ -974,6 +1079,9 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                 person_slug,
                 person_name,
                 birth_date,
+                birth_location,
+                birth_latitude,
+                birth_longitude,
                 force,
             };
             create_workspace_skeleton(&root, &options)?;
@@ -992,6 +1100,9 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
             person_slug,
             person_name,
             birth_date,
+            birth_location,
+            birth_latitude,
+            birth_longitude,
             force,
         } => {
             let root = resolve_data_root(root);
@@ -1002,6 +1113,9 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                 person_slug,
                 person_name,
                 birth_date,
+                birth_location,
+                birth_latitude,
+                birth_longitude,
                 force,
             };
             let world_root = WorkspacePaths::new(&root)
@@ -1062,6 +1176,9 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
             person_slug,
             person_name,
             birth_date,
+            birth_location,
+            birth_latitude,
+            birth_longitude,
             no_birth_event,
             force,
         } => {
@@ -1072,6 +1189,9 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                     person_slug,
                     person_name,
                     birth_date,
+                    birth_location,
+                    birth_latitude,
+                    birth_longitude,
                     create_birth_event: !no_birth_event,
                     force,
                 },
@@ -1146,8 +1266,16 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
             root,
             world,
             event_slug,
-            kind,
+            event_type,
             title,
+            participants,
+            places,
+            location,
+            latitude,
+            longitude,
+            time,
+            date_precision,
+            sources,
             force,
         } => {
             let world_root = resolve_world_root(root, world.as_deref())?;
@@ -1155,8 +1283,16 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                 &world_root,
                 &LocalEventOptions {
                     event_slug,
-                    event_kind: kind,
+                    event_type,
                     title,
+                    participants,
+                    places,
+                    location,
+                    latitude,
+                    longitude,
+                    time,
+                    date_precision,
+                    sources,
                     force,
                 },
             )?;
@@ -1244,6 +1380,7 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
             kind,
             target,
             value,
+            sources,
             force,
         } => {
             let world_root = resolve_world_root(root, world.as_deref())?;
@@ -1254,6 +1391,7 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                     assertion_kind: kind,
                     target,
                     value,
+                    sources,
                     force,
                 },
             )?;
@@ -1265,6 +1403,9 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
             person_slug,
             person_name,
             birth_date,
+            birth_location,
+            birth_latitude,
+            birth_longitude,
             force,
         } => {
             let world_root = resolve_world_root(root, world.as_deref())?;
@@ -1274,6 +1415,9 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                     person_slug,
                     person_name,
                     birth_date,
+                    birth_location,
+                    birth_latitude,
+                    birth_longitude,
                     force,
                 },
             )?;
