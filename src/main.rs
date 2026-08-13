@@ -11,18 +11,23 @@ use kleio::{
     LocalRelationshipOptions, LocalSchemaKind, LocalSchemaOptions, LocalSkeletonOptions,
     LocalSourceOptions, LocalViewKind, LocalViewOptions, LocalWorldBuildOptions, WorkspaceConfig,
     WorkspacePaths, build_local_world_with_options, check_local_media, compile_local_ecs,
-    compile_local_tree, create_local_assertion, create_local_birth_event, create_local_collection,
-    create_local_entity, create_local_event, create_local_import_report, create_local_person,
-    create_local_relationship, create_local_schema, create_local_source, create_local_view,
-    create_workspace_skeleton, create_world_layout, create_world_skeleton, doctor_local_world,
-    list_local_views, read_local_data_unvalidated, read_workspace_config,
-    resolve_workspace_world_root, resolve_world_build_paths, summarize_local_world,
-    validate_local_world, write_local_data_json, write_local_ecs_json, write_local_timeline_json,
-    write_local_tree_json_with_view, write_workspace_config,
+    compile_local_tree, compile_local_tree_with_view, compile_local_trees_document_with_view,
+    create_local_assertion, create_local_birth_event, create_local_collection, create_local_entity,
+    create_local_event, create_local_import_report, create_local_person, create_local_relationship,
+    create_local_schema, create_local_source, create_local_view, create_workspace_skeleton,
+    create_world_layout, create_world_skeleton, doctor_local_world, list_local_views,
+    read_local_data_unvalidated, read_workspace_config, resolve_workspace_world_root,
+    resolve_world_build_paths, summarize_local_world, validate_local_world, write_local_data_json,
+    write_local_ecs_json, write_local_timeline_json, write_local_tree_json_with_view,
+    write_workspace_config,
 };
 use kleio_gedcom::{
     LocalGedcomIngestOptions, PrimaryGedcomImportOptions, ingest_primary_gedcom_to_world,
     set_primary_gedcom_import,
+};
+use kleio_svg::{
+    TreeSvgLayout, TreeSvgOptions, TreeSvgOrientation, TreeSvgViewSpec, inspect_tree_svg_view,
+    render_tree_svg, render_tree_svg_view, svg_to_png_bytes,
 };
 
 mod authoring;

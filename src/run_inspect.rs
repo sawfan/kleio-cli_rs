@@ -57,6 +57,16 @@ pub(crate) fn run(command: Command) -> Result<(), Box<dyn std::error::Error>> {
             let world_root = resolve_world_root(root, world.as_deref())?;
             print_tree_sketch(&world_root, person.as_deref(), depth, redact)?;
         }
+        Command::InspectTreeView(crate::cli_inspect::InspectTreeViewArgs {
+            root,
+            world,
+            view,
+            person,
+            redact,
+        }) => {
+            let world_root = resolve_world_root(root, world.as_deref())?;
+            print_tree_view_inspection(&world_root, view.as_deref(), person.as_deref(), redact)?;
+        }
         Command::Validate(crate::cli_inspect::ValidateArgs { root, world }) => {
             let world_root = resolve_world_root(root, world.as_deref())?;
             let report = validate_local_world(&world_root)?;

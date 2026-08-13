@@ -96,6 +96,29 @@ pub(crate) struct TreeSketchArgs {
     pub(crate) redact: bool,
 }
 
+/// Inspect a tree view projection and report likely layout/data issues.
+#[derive(Debug, clap::Args)]
+pub(crate) struct InspectTreeViewArgs {
+    /// Workspace root. Defaults to $KLEIO_DATA_DIR, $XDG_DATA_HOME/kleio, or ~/.local/share/kleio.
+    pub(crate) root: Option<PathBuf>,
+
+    /// World slug. Defaults to the workspace default world.
+    #[arg(long)]
+    pub(crate) world: Option<String>,
+
+    /// Tree view slug. Defaults to the first tree view in the world.
+    #[arg(long)]
+    pub(crate) view: Option<String>,
+
+    /// Person slug/id to inspect as focus. Overrides the tree view root.
+    #[arg(long)]
+    pub(crate) person: Option<String>,
+
+    /// Redact person names and local source ids in output.
+    #[arg(long)]
+    pub(crate) redact: bool,
+}
+
 /// Validate world files without writing build outputs.
 #[derive(Debug, clap::Args)]
 pub(crate) struct ValidateArgs {

@@ -90,6 +90,8 @@ pub(crate) enum Command {
     ListViews(ListViewsArgs),
     /// Print a small text visualization of nearby family relationships.
     TreeSketch(TreeSketchArgs),
+    /// Inspect a tree view projection and report likely layout/data issues.
+    InspectTreeView(InspectTreeViewArgs),
     /// Point a world's world.toml at the active primary GEDCOM file.
     SetGedcom(SetGedcomArgs),
     /// Ingest a GEDCOM file into first-pass world records.
@@ -122,4 +124,12 @@ pub(crate) enum Command {
     CompileTimeline(CompileTimelineArgs),
     /// Compile world person records into the current tree view JSON projection.
     CompileTree(CompileTreeArgs),
+    /// Compile world person records into Urania's browser tree upload JSON format.
+    CompileTrees(CompileTreesArgs),
+    /// Render a compiled world tree view to a browser-independent SVG file.
+    ExportTreeSvg(ExportTreeSvgArgs),
+    /// Render every tree SVG layout, optionally with PNG copies.
+    ExportTreeLayouts(ExportTreeLayoutsArgs),
+    /// Render built-in family tree SVG fixture examples for visual regression checks.
+    ExportTreeFixtures(ExportTreeFixturesArgs),
 }

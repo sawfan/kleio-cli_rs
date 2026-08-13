@@ -7,6 +7,8 @@ edition = "2024"
 clap = { version = "4", features = ["derive"] }
 kleio = { path = "../kleio" }
 kleio-gedcom = { path = "../kleio-gedcom" }
+serde_json = "1"
+kleio-svg = { path = "../kleio-svg", features = ["png"] }
 
 [[bin]]
 name = "kleio-cli"

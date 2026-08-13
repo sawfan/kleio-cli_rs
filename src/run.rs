@@ -39,6 +39,7 @@ pub(crate) fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
         | Command::ListSources(..)
         | Command::ListViews(..)
         | Command::TreeSketch(..)
+        | Command::InspectTreeView(..)
         | Command::Validate(..)
         | Command::CheckMedia(..)
         | Command::Doctor(..)
@@ -52,7 +53,11 @@ pub(crate) fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
         | Command::CompileEcs(..)
         | Command::Build(..)
         | Command::CompileTimeline(..)
-        | Command::CompileTree(..) => crate::run_build::run(args.command)?,
+        | Command::CompileTree(..)
+        | Command::CompileTrees(..)
+        | Command::ExportTreeSvg(..)
+        | Command::ExportTreeLayouts(..)
+        | Command::ExportTreeFixtures(..) => crate::run_build::run(args.command)?,
     }
     Ok(())
 }
